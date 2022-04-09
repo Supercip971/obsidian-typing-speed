@@ -1,6 +1,6 @@
 {
 	"name": "typing-speed",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "This is a plugin for showing the current typing speed",
 	"main": "main.js",
 	"scripts": {

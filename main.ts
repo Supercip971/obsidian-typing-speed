@@ -20,14 +20,14 @@ function average_array(array: number[]): number {
 export default class TypingSpeedPlugin extends Plugin {
 	settings: TypingSpeedSettings;
 
-	keyTyped: number[] = [0];
-	wordTyped: number[] = [0];
+	Typed: number[] = [0];
 
 	keyTypedInSecond: number = 0;
 	wordTypedInSecond: number = 0;
 	keyTypedSinceSpace: number = 0;
 
 	statusBarItemEl: HTMLElement;
+
 	async onload() {
 		await this.loadSettings();
 
@@ -56,21 +56,28 @@ export default class TypingSpeedPlugin extends Plugin {
 		this.registerInterval(window.setInterval(() => {
 
 			var average = 0;
-			if (this.settings.metrics == 'cps') {
-				if (this.keyTyped.push(this.keyTypedInSecond) > 10) {
-					this.keyTyped.shift();
+
+			if (this.settings.metrics == 'cps' || this.settings.metrics == 'cpm') {
+				if (this.Typed.push(this.keyTypedInSecond) > 10) {
+					this.Typed.shift();
 				}
-				average = Math.round(average_array(this.keyTyped));
+
+				if (this.settings.metrics == 'cpm') {
+					average = Math.round(average_array(this.Typed) * 60);
+				}
+				else {
+					average = Math.round(average_array(this.Typed));
+				}
+
 				this.keyTypedInSecond = 0;
-
-
 			}
 			else if (this.settings.metrics == 'wpm') {
 
-				if (this.wordTyped.push(this.wordTypedInSecond) > 10) {
-					this.wordTyped.shift();
+				if (this.Typed.push(this.wordTypedInSecond) > 10) {
+					this.Typed.shift();
 				}
-				average = Math.round(average_array(this.wordTyped) * 60);
+
+				average = Math.round(average_array(this.Typed) * 60);
 				this.wordTypedInSecond = 0;
 
 			}
@@ -113,9 +120,11 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 			.addDropdown(text => text
 				.addOption('wpm', 'word per minute')
 				.addOption('cps', 'character per second')
+				.addOption('cpm', 'character per minute')
 				.setValue(this.plugin.settings.metrics)
 				.onChange(async (value) => {
 					this.plugin.settings.metrics = value;
+					this.plugin.Typed = [0];
 					await this.plugin.saveSettings();
 				}));
 	}
