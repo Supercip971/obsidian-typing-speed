@@ -6,7 +6,8 @@ interface TypingSpeedSettings {
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
-	metrics: 'wpm'
+	metrics: 'wpm',
+	darken_after_pausing: true,
 }
 
 function getMetricFactor(metric: String): number {
