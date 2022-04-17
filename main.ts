@@ -91,11 +91,11 @@ export default class TypingSpeedPlugin extends Plugin {
 				this.wordTypedInSecond = 0;
 			}
 
-			if (this.Typed.push(added) > 10 && !this.hasStoppedTyping(this.Typed)) {
-				this.Typed.shift();
-			}
 
-			if (!this.hasStoppedTyping(this.Typed)) {
+			if (!this.hasStoppedTyping(this.Typed) || added != 0) {
+				if (this.Typed.push(added) > 10) {
+					this.Typed.shift();
+				}
 				average = Math.round(average_array(this.Typed) * fact);
 			}
 
