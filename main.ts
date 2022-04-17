@@ -8,6 +8,16 @@ const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	metrics: 'wpm'
 }
 
+function getMetricFactor(metric: String): number {
+	switch (metric) {
+		case 'cpm':
+		case 'wpm':
+			return 60;
+		case 'cps':
+			return 1;
+	}
+}
+
 function average_array(array: number[]): number {
 	var avg = 0;
 	array.forEach((val: number, idx: number) => {
@@ -27,6 +37,19 @@ export default class TypingSpeedPlugin extends Plugin {
 	keyTypedSinceSpace: number = 0;
 
 	statusBarItemEl: HTMLElement;
+
+	// if in the last 3 seconds the user was not typing, just stop counting
+	hasStoppedTyping(typed: number[]): Boolean {
+		const check_start = typed.length - 3;
+
+		if (check_start < 0) {
+			return false;
+		}
+
+		const sum_last_three = typed[check_start] + typed[check_start + 1] + typed[check_start + 2];
+
+		return sum_last_three == 0;
+	}
 
 	async onload() {
 		await this.loadSettings();
@@ -56,31 +79,27 @@ export default class TypingSpeedPlugin extends Plugin {
 		this.registerInterval(window.setInterval(() => {
 
 			var average = 0;
+			var fact = getMetricFactor(this.settings.metrics);
+			var added = 0;
 
 			if (this.settings.metrics == 'cps' || this.settings.metrics == 'cpm') {
-				if (this.Typed.push(this.keyTypedInSecond) > 10) {
-					this.Typed.shift();
-				}
-
-				if (this.settings.metrics == 'cpm') {
-					average = Math.round(average_array(this.Typed) * 60);
-				}
-				else {
-					average = Math.round(average_array(this.Typed));
-				}
-
+				added = this.keyTypedInSecond;
 				this.keyTypedInSecond = 0;
 			}
 			else if (this.settings.metrics == 'wpm') {
-
-				if (this.Typed.push(this.wordTypedInSecond) > 10) {
-					this.Typed.shift();
-				}
-
-				average = Math.round(average_array(this.Typed) * 60);
+				added = this.wordTypedInSecond;
 				this.wordTypedInSecond = 0;
-
 			}
+
+			if (this.Typed.push(added) > 10 && !this.hasStoppedTyping(this.Typed)) {
+				this.Typed.shift();
+			}
+
+			if (!this.hasStoppedTyping(this.Typed)) {
+				average = Math.round(average_array(this.Typed) * fact);
+			}
+
+
 
 			this.statusBarItemEl.setText(average + ' ' + this.settings.metrics);
 		}, 1000));
