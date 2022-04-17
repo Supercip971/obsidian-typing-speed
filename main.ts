@@ -2,6 +2,7 @@ import { App, Editor, editorViewField, MarkdownView, Modal, Notice, Plugin, Plug
 
 interface TypingSpeedSettings {
 	metrics: string;
+	darken_after_pausing: boolean;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
@@ -38,15 +39,15 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	statusBarItemEl: HTMLElement;
 
-	// if in the last 3 seconds the user was not typing, just stop counting
+	// if in the last 2 seconds the user was not typing, just stop counting
 	hasStoppedTyping(typed: number[]): Boolean {
-		const check_start = typed.length - 3;
+		const check_start = typed.length - 2;
 
 		if (check_start < 0) {
 			return false;
 		}
 
-		const sum_last_three = typed[check_start] + typed[check_start + 1] + typed[check_start + 2];
+		const sum_last_three = typed[check_start] + typed[check_start + 1];
 
 		return sum_last_three == 0;
 	}
@@ -97,8 +98,17 @@ export default class TypingSpeedPlugin extends Plugin {
 					this.Typed.shift();
 				}
 				average = Math.round(average_array(this.Typed) * fact);
-			}
 
+				if (this.settings.darken_after_pausing) {
+					this.statusBarItemEl.style.opacity = "100%";
+				}
+			}
+			else {
+				if (this.settings.darken_after_pausing) {
+
+					this.statusBarItemEl.style.opacity = "50%";
+				}
+			}
 
 
 			this.statusBarItemEl.setText(average + ' ' + this.settings.metrics);
@@ -132,6 +142,17 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl('h2', { text: 'Settings for typing-speed plugin' });
+
+		new Setting(containerEl)
+			.setName('Darken after 3 sec')
+			.setDesc('When you stop writing, after 3 seconds the typing speed display will darken.')
+			.addToggle(bool => bool
+				.setValue(true)
+				.onChange(async (value) => {
+					this.plugin.settings.darken_after_pausing = value;
+					await this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(containerEl)
 			.setName('Typing speed metric')
