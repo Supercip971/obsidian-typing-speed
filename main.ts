@@ -64,7 +64,7 @@ export default class TypingSpeedPlugin extends Plugin {
 		this.registerDomEvent(document, 'keydown', (evt: KeyboardEvent) => {
 
 			// only some key are valid
-			const keyRegex: RegExp = /^[A-Za-z,;1-9]$/g;
+			const keyRegex: RegExp = /^[\p{L},;1-9]$/gu;
 
 			if (evt.key.match(keyRegex)) {
 				this.keyTypedInSecond += 1;
