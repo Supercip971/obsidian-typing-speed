@@ -3,12 +3,14 @@ import { App, Editor, editorViewField, MarkdownView, Modal, Notice, Plugin, Plug
 interface TypingSpeedSettings {
 	metrics: string;
 	darken_after_pausing: boolean;
+	monkeytype_counting: boolean;
 	show_minmax: boolean;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	metrics: 'wpm',
 	darken_after_pausing: true,
+	monkeytype_counting: true,
 	show_minmax: false,
 }
 
@@ -114,7 +116,13 @@ export default class TypingSpeedPlugin extends Plugin {
 			}
 
 			if (evt.key == ' ' && this.keyTypedSinceSpace != 0) {
-				this.wordTypedInSecond += 1;
+				if(this.settings.monkeytype_counting)
+				{
+					this.wordTypedInSecond += (this.keyTypedSinceSpace+1)/5.0;
+				}
+				else {
+					this.wordTypedInSecond += 1.0;
+				}
 				this.keyTypedSinceSpace = 0;
 			}
 
@@ -188,6 +196,10 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		if(this.settings.monkeytype_counting == undefined)
+		{
+			this.settings.monkeytype_counting = DEFAULT_SETTINGS.monkeytype_counting;
+		}
 		if(this.settings.show_minmax == undefined)
 		{
 			this.settings.show_minmax = DEFAULT_SETTINGS.show_minmax;
@@ -239,6 +251,17 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 					this.plugin.Typed = [0];
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Normalize word counting')
+			.setDesc('Replicate the word counting functionality of MonkeyType by considering each word as the number of characters divided by 5. While this method may not be as precise for direct word counting, it accounts for the varying lengths of words.')
+			.addToggle(bool => bool
+				.setValue(true)
+				.onChange(async (value) => {
+					this.plugin.settings.monkeytype_counting = value;
+					await this.plugin.saveSettings();
+				})
+			);
 		
 		new Setting(containerEl)
 			.setName('Show min-max typing speed')
