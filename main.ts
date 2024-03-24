@@ -34,6 +34,8 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	Typed: number[] = [0];
 
+
+	accumulatedSeconds: number = 10;
 	keyTypedInSecond: number = 0;
 	wordTypedInSecond: number = 0;
 	keyTypedSinceSpace: number = 0;
@@ -95,7 +97,12 @@ export default class TypingSpeedPlugin extends Plugin {
 
 
 			if (!this.hasStoppedTyping(this.Typed) || added != 0) {
-				if (this.Typed.push(added) > 10) {
+
+				if(this.hasStoppedTyping(this.Typed))
+				{
+					this.Typed = [];
+				}
+				if (this.Typed.push(added) > this.accumulatedSeconds) {
 					this.Typed.shift();
 				}
 				average = Math.round(average_array(this.Typed) * fact);
