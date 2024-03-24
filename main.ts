@@ -29,6 +29,14 @@ function average_array(array: number[]): number {
 	return avg / array.length;
 }
 
+
+function array_shiftadd(array: number[], value: number): number[] {
+	for (var i = 0; i < array.length - 1; i++) {
+		array[i] = array[i + 1];
+	}
+	array[array.length - 1] = value;
+	return array;
+}
 export default class TypingSpeedPlugin extends Plugin {
 	settings: TypingSpeedSettings;
 
@@ -44,15 +52,20 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	// if in the last 2 seconds the user was not typing, just stop counting
 	hasStoppedTyping(typed: number[]): Boolean {
-		const check_start = typed.length - 2;
+
+		const second_check = 2 * this.pollings_in_seconds;
+		const check_start = typed.length - second_check;
 
 		if (check_start < 0) {
 			return false;
 		}
 
-		const sum_last_three = typed[check_start] + typed[check_start + 1];
-
-		return sum_last_three == 0;
+		for (var i = check_start; i < typed.length; i++) {
+			if (typed[i] != 0) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	async onload() {
@@ -102,8 +115,13 @@ export default class TypingSpeedPlugin extends Plugin {
 				{
 					this.Typed = [];
 				}
-				if (this.Typed.push(added) > this.accumulatedSeconds) {
-					this.Typed.shift();
+
+				if(this.Typed.length > this.pollings_in_seconds * 10)
+				{
+					array_shiftadd(this.Typed, added);
+				}
+				else {
+					this.Typed.push(added);
 				}
 				average = Math.round(average_array(this.Typed) * fact);
 
