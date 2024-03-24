@@ -3,20 +3,27 @@ import { App, Editor, editorViewField, MarkdownView, Modal, Notice, Plugin, Plug
 interface TypingSpeedSettings {
 	metrics: string;
 	darken_after_pausing: boolean;
+	show_minmax: boolean;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	metrics: 'wpm',
 	darken_after_pausing: true,
+	show_minmax: false,
+}
+
+interface MinMaxVals {
+	min: number;
+	max: number;
 }
 
 function getMetricFactor(metric: String): number {
 	switch (metric) {
 		case 'cpm':
 		case 'wpm':
-			return 60;
+			return 60.0;
 		case 'cps':
-			return 1;
+			return 1.0;
 	}
 }
 
@@ -27,6 +34,26 @@ function average_array(array: number[]): number {
 	});
 
 	return avg / array.length;
+}
+
+function minmax_in_array(array: number[]):MinMaxVals {
+	
+	var min_val = 10000.0;
+	var max_val = 0.0;
+	var blurred_array = [];
+	for(var i = 1; i < array.length - 1; i++)
+	{
+		var val = (array[i]+array[i+1] +array[i-1])/3;
+		blurred_array.push(val);
+	}
+
+	blurred_array.forEach((val: number, idx: number) => {
+		max_val = Math.max(val, max_val);
+		min_val = Math.min(val, min_val);
+	});
+
+	return {min: min_val, max: max_val};
+	
 }
 
 
@@ -43,7 +70,7 @@ export default class TypingSpeedPlugin extends Plugin {
 	Typed: number[] = [0];
 
 
-	accumulatedSeconds: number = 10;
+	pollings_in_seconds: number = 1.0;
 	keyTypedInSecond: number = 0;
 	wordTypedInSecond: number = 0;
 	keyTypedSinceSpace: number = 0;
@@ -98,6 +125,8 @@ export default class TypingSpeedPlugin extends Plugin {
 			var average = 0;
 			var fact = getMetricFactor(this.settings.metrics);
 			var added = 0;
+			var min_val = 0;
+			var max_val = 0;
 
 			if (this.settings.metrics == 'cps' || this.settings.metrics == 'cpm') {
 				added = this.keyTypedInSecond;
@@ -123,7 +152,15 @@ export default class TypingSpeedPlugin extends Plugin {
 				else {
 					this.Typed.push(added);
 				}
-				average = Math.round(average_array(this.Typed) * fact);
+				average = Math.round(average_array(this.Typed) * (fact));
+
+				// avoid showing minmax if the setting is disabled 
+				if(this.settings.show_minmax)
+				{
+					var {min: min_avg, max: max_avg} = minmax_in_array(this.Typed);
+					min_val = Math.round(min_avg * (fact));
+					max_val = Math.round(max_avg * (fact));
+				}
 
 				if (this.settings.darken_after_pausing) {
 					this.statusBarItemEl.style.opacity = "100%";
@@ -135,10 +172,15 @@ export default class TypingSpeedPlugin extends Plugin {
 					this.statusBarItemEl.style.opacity = "50%";
 				}
 			}
+			
 
-
-			this.statusBarItemEl.setText(average + ' ' + this.settings.metrics);
-		}, 1000));
+			var final_str = average + ' ' + this.settings.metrics;
+			if(this.settings.show_minmax)
+			{
+				final_str += ' (' + min_val + '-' + max_val + ')';
+			}
+			this.statusBarItemEl.setText(final_str);
+		}, 1000 / this.pollings_in_seconds ));
 	}
 
 	onunload() {
@@ -146,6 +188,10 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		if(this.settings.show_minmax == undefined)
+		{
+			this.settings.show_minmax = DEFAULT_SETTINGS.show_minmax;
+		}
 	}
 
 	async saveSettings() {
@@ -193,5 +239,17 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 					this.plugin.Typed = [0];
 					await this.plugin.saveSettings();
 				}));
-	}
+		
+		new Setting(containerEl)
+			.setName('Show min-max typing speed')
+			.setDesc('Present the lowest and highest typing speeds observed, focusing specifically on the worst and best speeds recorded within 3-second intervals. Note that there is more numbers shifting per second so it may be more distracting')
+			.addToggle(bool => bool
+				.setValue(false)
+				.onChange(async (value) => {
+					this.plugin.settings.show_minmax = value;
+					await this.plugin.saveSettings();
+				})
+			);
+		
+		}
 }
