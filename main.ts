@@ -231,7 +231,7 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 			.setName('Darken after 3 sec')
 			.setDesc('When you stop writing, after 3 seconds the typing speed display will darken.')
 			.addToggle(bool => bool
-				.setValue(true)
+				.setValue(this.plugin.settings.darken_after_pausing)
 				.onChange(async (value) => {
 					this.plugin.settings.darken_after_pausing = value;
 					await this.plugin.saveSettings();
@@ -256,7 +256,7 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 			.setName('Normalize word counting')
 			.setDesc('Replicate the word counting functionality of MonkeyType by considering each word as the number of characters divided by 5. While this method may not be as precise for direct word counting, it accounts for the varying lengths of words.')
 			.addToggle(bool => bool
-				.setValue(true)
+				.setValue(this.plugin.settings.monkeytype_counting)
 				.onChange(async (value) => {
 					this.plugin.settings.monkeytype_counting = value;
 					await this.plugin.saveSettings();
@@ -267,7 +267,7 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 			.setName('Show min-max typing speed')
 			.setDesc('Present the lowest and highest typing speeds observed, focusing specifically on the worst and best speeds recorded within 3-second intervals. Note that there is more numbers shifting per second so it may be more distracting')
 			.addToggle(bool => bool
-				.setValue(false)
+				.setValue(this.plugin.settings.show_minmax)
 				.onChange(async (value) => {
 					this.plugin.settings.show_minmax = value;
 					await this.plugin.saveSettings();
