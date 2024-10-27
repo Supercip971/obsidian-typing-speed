@@ -7,6 +7,7 @@ interface TypingSpeedSettings {
 	darken_after_pausing: string;
 	monkeytype_counting: boolean;
 	show_minmax: boolean;
+	display_first: boolean;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
@@ -14,6 +15,7 @@ const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	darken_after_pausing: 'darken',
 	monkeytype_counting: true,
 	show_minmax: false,
+	display_first: false,
 }
 
 interface MinMaxVals {
@@ -174,6 +176,13 @@ export default class TypingSpeedPlugin extends Plugin {
 					this.statusBarItemEl.style.opacity = "100%";
 				this.statusBarItemEl.style.display = 'inline-flex';
 
+				if(this.settings.display_first)
+				{
+					this.statusBarItemEl.style.order = '-1';
+				}
+				else 
+				{
+					this.statusBarItemEl.style.order = '0';
 				}
 			}
 			else {
@@ -221,6 +230,11 @@ export default class TypingSpeedPlugin extends Plugin {
 		if(this.settings.darken_after_pausing == undefined )
 		{
 			this.settings.darken_after_pausing = DEFAULT_SETTINGS.darken_after_pausing;
+		}
+
+		if(this.settings.display_first == undefined)
+			{
+			this.settings.display_first = DEFAULT_SETTINGS.display_first;
 		}
 
 		// auto convert settings between version
@@ -321,6 +335,17 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.darken_after_pausing)
 				.onChange(async (value) => {
 					this.plugin.settings.darken_after_pausing = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Display first')
+			.setDesc('Tweak the ordering in the status bar, to try to put the typing speed at first. Generally used to avoid shifting issue when trying to hide the typing speed. (This is a hack and may create little visual issues with other plugin)')
+			.addToggle(bool => bool
+				.setValue(this.plugin.settings.display_first)
+				.onChange(async (value) => {
+					this.plugin.settings.display_first = value;
 					await this.plugin.saveSettings();
 				})
 			);
