@@ -252,19 +252,20 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
+    	let coffeeLink = containerEl.createEl("a", {
+    	  href: "https://ko-fi.com/cypbv",
+    	});
+    	let coffeeImg = coffeeLink.createEl("img", {
+    	  attr: {
+    	    src: "https://cdn.ko-fi.com/cdn/kofi3.png?v=3",
+    	  },
+    	});
+    	coffeeImg.height = 45;
+		
 
 		containerEl.createEl('h2', { text: 'Settings for typing-speed plugin' });
 
-		new Setting(containerEl)
-			.setName('Darken after 3 sec')
-			.setDesc('When you stop writing, after 3 seconds the typing speed display will darken.')
-			.addToggle(bool => bool
-				.setValue(this.plugin.settings.darken_after_pausing)
-				.onChange(async (value) => {
-					this.plugin.settings.darken_after_pausing = value;
-					await this.plugin.saveSettings();
-				})
-			);
+		containerEl.createEl('h3', {text: 'Counting'})
 
 		new Setting(containerEl)
 			.setName('Typing speed metric')
@@ -301,6 +302,14 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+		containerEl.createEl('h3', {text: 'Styling'})
+		
+		containerEl.createEl('img', {
+			attr: {
+				src: "data:image/svg+xml;base64," + tuto_stylingb64,
+			}
+		})
+
 		new Setting(containerEl)
 			.setName('Darken after 3 sec')
 			.setDesc(
