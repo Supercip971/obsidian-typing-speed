@@ -1,15 +1,17 @@
-import { App, Editor, editorViewField, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { tuto_stylingb64 } from 'assets';
+import { App, Editor, editorViewField, FileSystemAdapter, MarkdownView, Modal, normalizePath, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+
 
 interface TypingSpeedSettings {
 	metrics: string;
-	darken_after_pausing: boolean;
+	darken_after_pausing: string;
 	monkeytype_counting: boolean;
 	show_minmax: boolean;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	metrics: 'wpm',
-	darken_after_pausing: true,
+	darken_after_pausing: 'darken',
 	monkeytype_counting: true,
 	show_minmax: false,
 }
@@ -64,6 +66,7 @@ function array_shiftadd(array: number[], value: number): number[] {
 
 	return array;
 }
+  
 export default class TypingSpeedPlugin extends Plugin {
 	settings: TypingSpeedSettings;
 
@@ -168,14 +171,18 @@ export default class TypingSpeedPlugin extends Plugin {
 					max_val = Math.round(max_avg * (fact));
 				}
 
-				if (this.settings.darken_after_pausing) {
 					this.statusBarItemEl.style.opacity = "100%";
+				this.statusBarItemEl.style.display = 'inline-flex';
+
 				}
 			}
 			else {
-				if (this.settings.darken_after_pausing) {
-
+				if (this.settings.darken_after_pausing == 'darken') {
 					this.statusBarItemEl.style.opacity = "50%";
+				}
+				else if(this.settings.darken_after_pausing == 'hide')
+				{
+					this.statusBarItemEl.style.display = 'none';
 				}
 			}
 			
@@ -194,6 +201,10 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+
+		// for some people, the settings don't get updated. 
+		// 
 		if(this.settings.monkeytype_counting == undefined)
 		{
 			this.settings.monkeytype_counting = DEFAULT_SETTINGS.monkeytype_counting;
@@ -201,6 +212,25 @@ export default class TypingSpeedPlugin extends Plugin {
 		if(this.settings.show_minmax == undefined)
 		{
 			this.settings.show_minmax = DEFAULT_SETTINGS.show_minmax;
+		}
+		if(this.settings.metrics == undefined)
+		{
+			this.settings.metrics = DEFAULT_SETTINGS.metrics;
+		}
+		
+		if(this.settings.darken_after_pausing == undefined )
+		{
+			this.settings.darken_after_pausing = DEFAULT_SETTINGS.darken_after_pausing;
+		}
+
+		// auto convert settings between version
+		if((this.settings.darken_after_pausing as unknown) == true)
+		{
+			this.settings.darken_after_pausing = 'darken';
+		} 
+		else if((this.settings.darken_after_pausing as unknown) == false)
+		{
+			this.settings.darken_after_pausing = 'show';
 		}
 	}
 
@@ -268,6 +298,20 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.show_minmax)
 				.onChange(async (value) => {
 					this.plugin.settings.show_minmax = value;
+					await this.plugin.saveSettings();
+				})
+			);
+		new Setting(containerEl)
+			.setName('Darken after 3 sec')
+			.setDesc(
+				'When you stop writing, after 3 seconds the typing speed display will darken or hide.')
+			.addDropdown(text => text
+				.addOption('darken', 'darken - only make the status less visible')
+				.addOption('hide', 'hide - fully hide the status')
+				.addOption('show', 'show - always show the status')
+				.setValue(this.plugin.settings.darken_after_pausing)
+				.onChange(async (value) => {
+					this.plugin.settings.darken_after_pausing = value;
 					await this.plugin.saveSettings();
 				})
 			);
