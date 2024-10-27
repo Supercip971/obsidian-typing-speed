@@ -30,12 +30,11 @@ function getMetricFactor(metric: String): number {
 }
 
 function average_array(array: number[]): number {
-	var avg = 0;
-	array.forEach((val: number, idx: number) => {
-		avg += val;
-	});
+	var avg = array.reduce((a: number,b: number) => {
+		return a+b
+	}, 0);
 
-	return avg / array.length;
+	return (avg / array.length) || 0;
 }
 
 function minmax_in_array(array: number[]):MinMaxVals {
@@ -60,10 +59,9 @@ function minmax_in_array(array: number[]):MinMaxVals {
 
 
 function array_shiftadd(array: number[], value: number): number[] {
-	for (var i = 0; i < array.length - 1; i++) {
-		array[i] = array[i + 1];
-	}
-	array[array.length - 1] = value;
+	array.shift();
+	array.push(value);
+
 	return array;
 }
 export default class TypingSpeedPlugin extends Plugin {
