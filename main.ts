@@ -8,6 +8,8 @@ interface TypingSpeedSettings {
 	monkeytype_counting: boolean;
 	show_minmax: boolean;
 	display_first: boolean;
+	idle_threshold: number;
+	moving_average_seconds: number;
 }
 
 const DEFAULT_SETTINGS: TypingSpeedSettings = {
@@ -16,6 +18,8 @@ const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	monkeytype_counting: true,
 	show_minmax: false,
 	display_first: false,
+	idle_threshold: 2,
+	moving_average_seconds: 60,
 }
 
 interface MinMaxVals {
@@ -41,24 +45,14 @@ function average_array(array: number[]): number {
 	return (avg / array.length) || 0;
 }
 
-function minmax_in_array(array: number[]):MinMaxVals {
-	
-	var min_val = 10000.0;
-	var max_val = 0.0;
-	var blurred_array = [];
-	for(var i = 1; i < array.length - 1; i++)
-	{
-		var val = (array[i]+array[i+1] +array[i-1])/3;
-		blurred_array.push(val);
-	}
+	// edited this to avoid fp errors
+function minmax_in_array(array: number[]): MinMaxVals {
+	if (array.length === 0) return { min: 0, max: 0 };
 
-	blurred_array.forEach((val: number, idx: number) => {
-		max_val = Math.max(val, max_val);
-		min_val = Math.min(val, min_val);
-	});
+	let min_val = Math.min(...array);
+	let max_val = Math.max(...array);
 
-	return {min: min_val, max: max_val};
-	
+	return { min: min_val, max: max_val };
 }
 
 
@@ -82,10 +76,9 @@ export default class TypingSpeedPlugin extends Plugin {
 
 	statusBarItemEl: HTMLElement;
 
-	// if in the last 2 seconds the user was not typing, just stop counting
+	// if in the last n seconds the user was not typing, just stop counting
 	hasStoppedTyping(typed: number[]): Boolean {
-
-		const second_check = 2 * this.pollings_in_seconds;
+		const second_check = this.settings.idle_threshold * this.pollings_in_seconds;
 		const check_start = typed.length - second_check;
 
 		if (check_start < 0) {
@@ -156,7 +149,7 @@ export default class TypingSpeedPlugin extends Plugin {
 					this.Typed = [];
 				}
 
-				if(this.Typed.length > this.pollings_in_seconds * 10)
+				if(this.Typed.length > this.pollings_in_seconds * this.settings.moving_average_seconds)
 				{
 					array_shiftadd(this.Typed, added);
 				}
@@ -221,6 +214,12 @@ export default class TypingSpeedPlugin extends Plugin {
 		if(this.settings.show_minmax == undefined)
 		{
 			this.settings.show_minmax = DEFAULT_SETTINGS.show_minmax;
+		}
+		if(this.settings.idle_threshold == undefined) {
+			this.settings.idle_threshold = DEFAULT_SETTINGS.idle_threshold;
+		}
+		if(this.settings.moving_average_seconds == undefined) {
+			this.settings.moving_average_seconds = DEFAULT_SETTINGS.moving_average_seconds;
 		}
 		if(this.settings.metrics == undefined)
 		{
@@ -323,6 +322,25 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 				src: "data:image/svg+xml;base64," + tuto_stylingb64,
 			}
 		})
+
+		new Setting(containerEl)
+		.setName('Idle threshold (seconds)')
+		.addText(text => text
+		.setValue(this.plugin.settings.idle_threshold.toString())
+		.onChange(async (value) => {
+			this.plugin.settings.idle_threshold = parseInt(value) || 2;
+			await this.plugin.saveSettings();
+		}));
+
+		new Setting(containerEl)
+		.setName('Moving average window (seconds)')
+		.addText(text => text
+		.setValue(this.plugin.settings.moving_average_seconds.toString())
+		.onChange(async (value) => {
+			this.plugin.settings.moving_average_seconds = parseInt(value) || 60;
+			this.plugin.Typed = [0];
+			await this.plugin.saveSettings();
+		}));
 
 		new Setting(containerEl)
 			.setName('Darken after 3 sec')
