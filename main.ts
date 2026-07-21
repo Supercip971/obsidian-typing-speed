@@ -45,16 +45,14 @@ function average_array(array: number[]): number {
 	return (avg / array.length) || 0;
 }
 
-	// edited this to avoid fp errors
+// edited this to avoid fp errors, this time preserving blurring
 function minmax_in_array(array: number[]): MinMaxVals {
-	if (array.length === 0) return { min: 0, max: 0 };
+	if (!array.length) return { min: 0, max: 0 };
 
-	let min_val = Math.min(...array);
-	let max_val = Math.max(...array);
+	const blurred = array.map((v, i) => ((array[i - 1] ?? v) + v + (array[i + 1] ?? v)) / 3);
 
-	return { min: min_val, max: max_val };
+	return { min: Math.min(...blurred), max: Math.max(...blurred) };
 }
-
 
 function array_shiftadd(array: number[], value: number): number[] {
 	array.shift();
