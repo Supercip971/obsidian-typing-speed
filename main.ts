@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS: TypingSpeedSettings = {
 	show_minmax: false,
 	display_first: false,
 	idle_threshold: 2,
-	moving_average_seconds: 60,
+	moving_average_seconds: 10,
 }
 
 interface MinMaxVals {
