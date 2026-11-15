@@ -313,16 +313,11 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
-		containerEl.createEl('h3', {text: 'Styling'})
-		
-		containerEl.createEl('img', {
-			attr: {
-				src: "data:image/svg+xml;base64," + tuto_stylingb64,
-			}
-		})
 
 		new Setting(containerEl)
 		.setName('Idle threshold (seconds)')
+		.setDesc('If you stop typing for N many seconds, the display will darken or hide.')
+		
 		.addText(text => text
 		.setValue(this.plugin.settings.idle_threshold.toString())
 		.onChange(async (value) => {
@@ -332,14 +327,22 @@ class TypingSpeedSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 		.setName('Moving average window (seconds)')
+		.setDesc('The time window over which the moving average of the typing speed is calculated.')
 		.addText(text => text
 		.setValue(this.plugin.settings.moving_average_seconds.toString())
 		.onChange(async (value) => {
-			this.plugin.settings.moving_average_seconds = parseInt(value) || 60;
+			this.plugin.settings.moving_average_seconds = parseInt(value) || 10;
 			this.plugin.Typed = [0];
 			await this.plugin.saveSettings();
 		}));
 
+		containerEl.createEl('h3', {text: 'Styling'})
+		
+		containerEl.createEl('img', {
+			attr: {
+				src: "data:image/svg+xml;base64," + tuto_stylingb64,
+			}
+		})
 		new Setting(containerEl)
 			.setName('Darken after 3 sec')
 			.setDesc(
